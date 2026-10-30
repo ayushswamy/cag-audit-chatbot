@@ -1,0 +1,51 @@
+# ===========================================================================
+#  CAG Audit-Para Chatbot — .gitignore
+#  Keeps CODE in git; keeps CONFIDENTIAL audit data + secrets + big files OUT.
+# ===========================================================================
+
+# --- Secrets / local config ---
+.env
+.env.server
+.env.*.local
+
+# --- Python ---
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ipynb_checkpoints/
+*.ipynb
+
+# --- Model weights (GBs; downloaded offline into ./models) ---
+models/
+ollama-models/
+
+# --- Vector store (embedded Qdrant; contains chunk text) ---
+qdrant_local/
+
+# --- Caches ---
+.cache/
+
+# ===========================================================================
+#  CONFIDENTIAL AUDIT CONTENT — never publish
+#  (the CAG Inspection Report PDFs and any text extracted from them)
+# ===========================================================================
+data/
+ingest_out/
+cag-offline-bundle/
+/structured_paras.json
+/ingest_diff_report.txt
+*.pdf
+*.xlsx
+*.xls
+
+# Evaluation / test datasets (contain real audit questions, answers & figures)
+eval/*.jsonl
+eval/*.json
+tests/*.json
+
+# --- Misc build/run artifacts ---
+*.log
+scratch/
+demo_para.pdf

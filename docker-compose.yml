@@ -1,0 +1,81 @@
+# Phase 1 — postgres + qdrant + FastAPI app.
+# Qwen is assumed to be served EXTERNALLY (vLLM, OpenAI-compatible) at
+# OPENAI_BASE_URL — it is intentionally NOT part of this compose file.
+#
+# Model weights are mounted read-only from ./models into /models. They are
+# NEVER downloaded at runtime (HF_HUB_OFFLINE=1).
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: audit_postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-audit}
+      POSTGRES_USER: ${POSTGRES_USER:-audit}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-audit}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-audit} -d ${POSTGRES_DB:-audit}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  qdrant:
+    image: qdrant/qdrant:v1.12.4
+    container_name: audit_qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrantdata:/qdrant/storage
+    healthcheck:
+      # qdrant image is distroless (no shell/curl); TCP check via bash is not
+      # available either, so we let the app's own retry loop gate readiness.
+      test: ["CMD-SHELL", "true"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: audit_app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+    environment:
+      # Override the .env service-less defaults so the app finds the containers.
+      POSTGRES_HOST: postgres
+      QDRANT_URL: http://qdrant:6333
+      QDRANT_PATH: ""
+      MODELS_DIR: /models
+      BGE_M3_PATH: /models/bge-m3
+      RERANKER_PATH: /models/bge-reranker-v2-m3
+      HF_HUB_OFFLINE: "1"
+      TRANSFORMERS_OFFLINE: "1"
+      DATA_DIR: /data
+      EXCEL_INDEX: /data/Corporate office Para - Sample for database.xlsx
+      TARGET_PDF: /data/Corporate office IR 2019-20.pdf
+      TARGET_PERIOD: "2019-20"
+      # Answer LLM endpoint — supplied via .env (see env_file below).
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./models:/models:ro
+      - ./data:/data:ro
+      - ./app:/app/app
+      - ./scripts:/app/scripts
+      - ./tests:/app/tests
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8080
+
+volumes:
+  pgdata:
+  qdrantdata:

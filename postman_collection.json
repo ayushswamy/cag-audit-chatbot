@@ -1,0 +1,89 @@
+{
+  "info": {
+    "name": "NTPC CAG Audit-Para Chatbot API v1",
+    "description": "Phase 6A contract. Set collection variables baseUrl / apiKey. 'Create session' auto-saves sessionId.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "apiKey", "value": "dev-key-123" },
+    { "key": "sessionId", "value": "" },
+    { "key": "paraKey", "value": "Corporate Office|2019-20|IIB|2" }
+  ],
+  "auth": {
+    "type": "apikey",
+    "apikey": [
+      { "key": "key", "value": "X-API-Key" },
+      { "key": "value", "value": "{{apiKey}}" },
+      { "key": "in", "value": "header" }
+    ]
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": { "method": "GET", "header": [],
+        "url": { "raw": "{{baseUrl}}/api/v1/health", "host": ["{{baseUrl}}"], "path": ["api","v1","health"] } }
+    },
+    {
+      "name": "Create session",
+      "event": [ { "listen": "test", "script": { "exec": [
+        "var b = pm.response.json();",
+        "pm.collectionVariables.set('sessionId', b.session_id);",
+        "pm.test('has session_id', function(){ pm.expect(b.session_id).to.be.a('string'); });"
+      ], "type": "text/javascript" } } ],
+      "request": { "method": "POST", "header": [],
+        "url": { "raw": "{{baseUrl}}/api/v1/sessions", "host": ["{{baseUrl}}"], "path": ["api","v1","sessions"] } }
+    },
+    {
+      "name": "Ask (SSE stream)",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" },
+                    { "key": "Accept", "value": "text/event-stream" } ],
+        "body": { "mode": "raw", "raw": "{\n  \"message\": \"What did audit observe about the Tapovan HRT package?\"\n}" },
+        "url": { "raw": "{{baseUrl}}/api/v1/sessions/{{sessionId}}/ask", "host": ["{{baseUrl}}"], "path": ["api","v1","sessions","{{sessionId}}","ask"] },
+        "description": "Server-Sent Events. Postman shows the raw stream; a real client parses event:/data: lines."
+      }
+    },
+    {
+      "name": "Ask follow-up (same session)",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "body": { "mode": "raw", "raw": "{\n  \"message\": \"Who was the contractor?\"\n}" },
+        "url": { "raw": "{{baseUrl}}/api/v1/sessions/{{sessionId}}/ask", "host": ["{{baseUrl}}"], "path": ["api","v1","sessions","{{sessionId}}","ask"] }
+      }
+    },
+    {
+      "name": "History",
+      "request": { "method": "GET", "header": [],
+        "url": { "raw": "{{baseUrl}}/api/v1/sessions/{{sessionId}}/history", "host": ["{{baseUrl}}"], "path": ["api","v1","sessions","{{sessionId}}","history"] } }
+    },
+    {
+      "name": "Reset session",
+      "request": { "method": "POST", "header": [],
+        "url": { "raw": "{{baseUrl}}/api/v1/sessions/{{sessionId}}/reset", "host": ["{{baseUrl}}"], "path": ["api","v1","sessions","{{sessionId}}","reset"] } }
+    },
+    {
+      "name": "List paras",
+      "request": { "method": "GET", "header": [],
+        "url": { "raw": "{{baseUrl}}/api/v1/paras?period=2019-20&para_type=IIB&page=1&page_size=20",
+          "host": ["{{baseUrl}}"], "path": ["api","v1","paras"],
+          "query": [ { "key": "period", "value": "2019-20" }, { "key": "para_type", "value": "IIB" },
+                     { "key": "page", "value": "1" }, { "key": "page_size", "value": "20" } ] } }
+    },
+    {
+      "name": "Get para (Tapovan IIB-2)",
+      "request": { "method": "GET", "header": [],
+        "url": { "raw": "{{baseUrl}}/api/v1/paras/{{paraKey}}", "host": ["{{baseUrl}}"], "path": ["api","v1","paras","{{paraKey}}"] },
+        "description": "Postman URL-encodes the paraKey variable (spaces, |) automatically." }
+    },
+    {
+      "name": "Get para PDF (page range)",
+      "request": { "method": "GET", "header": [],
+        "url": { "raw": "{{baseUrl}}/api/v1/paras/{{paraKey}}/pdf?pages=true",
+          "host": ["{{baseUrl}}"], "path": ["api","v1","paras","{{paraKey}}","pdf"],
+          "query": [ { "key": "pages", "value": "true" } ] } }
+    }
+  ]
+}

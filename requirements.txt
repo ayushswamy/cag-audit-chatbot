@@ -1,0 +1,34 @@
+# Phase 1 — Internal Audit Para Chatbot
+# Pinned to majors; exact resolution done at build time. Offline model loading
+# (HF_HUB_OFFLINE=1) is enforced in code, not here.
+
+# --- API ---
+fastapi>=0.115,<0.200
+uvicorn[standard]>=0.30,<0.40
+python-multipart>=0.0.9
+
+# --- config ---
+pydantic>=2.7,<3
+pydantic-settings>=2.3,<3
+
+# --- Postgres (metadata + structured paras) ---
+SQLAlchemy>=2.0,<2.1
+psycopg[binary]>=3.1,<4
+
+# --- Vectors ---
+qdrant-client>=1.11,<2
+
+# --- Excel index ---
+openpyxl>=3.1,<4
+pandas>=2.2
+
+# --- Layout parsing ---
+docling>=2.0,<3
+
+# --- Embeddings + reranker (BGE-M3 / BGE-reranker-v2-m3) ---
+FlagEmbedding>=1.2
+# torch + transformers are pulled transitively by FlagEmbedding/docling.
+# On Windows/PyPI the default torch wheel is CPU-only.
+
+# --- Answer LLM (Qwen via vLLM OpenAI-compatible endpoint) ---
+openai>=1.30,<2
